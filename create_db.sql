@@ -1,27 +1,27 @@
 CREATE TABLE regions (
-	regionid	INTEGER PRIMARY KEY,
-	region 		VARCHAR
+  regionid  INTEGER PRIMARY KEY,
+  region    VARCHAR
 );
 
 CREATE TABLE cities (
-	cityid		INTEGER PRIMARY KEY,
-	city 			VARCHAR,
-	regionid	INTEGER,
-	FOREIGN KEY(regionid) REFERENCES regions(regionid)
+  cityid    INTEGER PRIMARY KEY,
+  city      VARCHAR,
+  regionid  INTEGER,
+  FOREIGN KEY(regionid) REFERENCES regions(regionid)
 );
 
 CREATE TABLE persons (
-	personid		INTEGER PRIMARY KEY,
-	firstname		VARCHAR,
-	lastname		VARCHAR,
-	middlename	VARCHAR,
-	regionid		INTEGER,
-	cityid			INTEGER,
-	phone				VARCHAR,
-	email				VARCHAR,
-	comment			TEXT,
-	FOREIGN KEY(regionid) REFERENCES regions(regionid),
-	FOREIGN KEY(cityid)		REFERENCES cities(cityid)
+  personid    INTEGER PRIMARY KEY,
+  firstname   VARCHAR,
+  lastname    VARCHAR,
+  middlename  VARCHAR,
+  regionid    INTEGER,
+  cityid      INTEGER,
+  phone       VARCHAR,
+  email       VARCHAR,
+  comment     TEXT,
+  FOREIGN KEY(regionid) REFERENCES regions(regionid),
+  FOREIGN KEY(cityid)   REFERENCES cities(cityid)
 );
 
 INSERT INTO regions VALUES(0, 'Krasnodar Krai');
