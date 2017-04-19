@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link rel="stylesheet" type="text/css" href="userform-style.css">
+		<title>User application form</title>
+	</head>
+	<body id="body">
+		<form id="form" action="" method="post">
+			<div>
+				<label for="first_name">First name<span style="color:red">*</span>:</label>
+				<input type="text" id="first_name" name="firstName" required>
+			</div>
+			<div>
+				<label for="last_name">Last name<span style="color:red">*</span>:</label>
+				<input type="text" id="last_name" name="lastName" required>
+			</div>
+			<div>
+				<label for="middle_name">Middle name:</label>
+				<input type="text" id="middle_name" name="middleName">
+			</div>
+			<div>
+				<label for="reg">Region:</label>
+				<input list="regions" id="reg" name="region">
+				<datalist id="regions"></datalist>
+			</div>
+			<div>
+				<label for="city_id">City:</label>
+				<input list="cities" id="city_id" name="city">
+				<datalist id="cities"></datalist>
+			</div>
+			<div>
+				<label for="phone">Phone:</label>
+				<input type="tel" id="phone" name="phone" placeholder="(999)999-99-99" 
+					title="Expected format is (999)999-99-99." 
+					pattern="\s*\(\s*\d{3}\s*\)\s*\d{3}\s*-?\s*\d\d\s*-?\s*\d\d\s*">
+			</div>
+			<div>
+				<label for="mail">E-mail:</label>
+				<input type="email" id="mail" name="email">
+			</div>
+			<div>
+				<label for="message">Comment<span style="color:red">*</span>:</label>
+				<textarea id="message" name="comment" required></textarea>
+			</div>
+			<div class="button">
+				<button type="submit">Send</button>
+			</div>
+			<script type="text/javascript" src="userform-validation.js"></script>
+		</form>
+	</body>
+</html>

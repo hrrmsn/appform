@@ -1,0 +1,67 @@
+form {
+  /* Just to center the form on the page */
+  margin: 0 auto;
+  width: 440px;
+  /* To see the outline of the form */
+  padding: 5em;
+  /*border: 10px solid #b2aee5;*/
+  /*border-radius: 2em;*/
+}
+
+form div + div {
+  margin-top: 1.5em;
+}
+
+label {
+  /* To make sure that all labels have the same size and are properly aligned */
+  display: inline-block;
+  width: 110px;
+  text-align: right;
+  font: .9em monospace;
+}
+
+input, textarea {
+  /* To make sure that all text fields have the same font settings
+     By default, textareas have a monospace font */
+  font: .9em serif;
+
+  /* To give the same size to all text fields */
+  width: 300px;
+  box-sizing: border-box;
+
+  /* To harmonize the look & feel of text field border */
+  border: 1px solid #999;
+
+  /*disable highlight on focus*/
+  outline: none;
+}
+
+input:invalid, textarea:invalid {
+	border: 2px solid red;
+}
+
+input:valid, textarea:valid {
+	border: 2px solid #ccc;
+}
+
+textarea {
+  /* To properly align multiline text fields with their labels */
+  vertical-align: top;
+
+  /* To give enough room to type some text */
+  height: 5em;
+
+  /*disable highlight on focus*/
+  outline: none;
+}
+
+.button {
+  /* To position the buttons to the same position of the text fields */
+  padding-left: 110px; /* same size as the label elements */
+}
+
+button {
+  /* This extra margin represent roughly the same space as the space
+     between the labels and their text fields */
+  margin-left: .5em;
+}
