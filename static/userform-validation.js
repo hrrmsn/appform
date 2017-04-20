@@ -27,12 +27,12 @@ addEventListenerToInput(commentTextArea);
 
 // playing with AJAX
 window.addEventListener('load', function() {
-	var xhttp = new XMLHttpRequest();
-	xhttp.onreadystatechange = function() {
-		if (this.readyState == 4 && this.status == 200) {
-			alert(this.responseText);
-		}
-	};
-	xhttp.open('GET', 'my_text_file.txt', true);
-	xhttp.send();
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      alert(this.responseText);
+    }
+  };
+  xhttp.open('GET', 'my_text_file.txt', true);
+  xhttp.send();
 });
