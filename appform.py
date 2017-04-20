@@ -9,7 +9,17 @@ import sqlite3
 
 
 def index(environ, start_response):
-  pass
+  html = ''
+  with open('userform.html', 'r') as f:
+    html = f.read()
+  response_body = html
+
+  response_headers = [
+    ('Content-Type', 'text/html')
+  ]
+
+  start_response('200 OK', response_headers)
+  return [response_body]
 
 
 def comment(environ, start_response):
@@ -17,7 +27,7 @@ def comment(environ, start_response):
   <!DOCTYPE html>
   <html>
     <head>
-      <title>Hey man! What's up?</title>
+      <title>Hey man! What's up? Wants some comment?</title>
     </head>
     <body>
       color picker:
@@ -41,11 +51,59 @@ def notfound(environ, start_response):
   ]
 
   start_response('404 NOT FOUND', response_headers)
-  return ['NOT FOUND']
+  return [b'NOT FOUND']
+
+
+def app_static(environ, start_response):
+  path_info = environ['PATH_INFO']
+  file_path = path_info[1:]
+  response_body = b'NOT FOUND'
+  content_type = 'application/octet-stream'
+  response_headers = [
+      ('Content-Type', content_type)
+  ]
+
+  if os.path.exists(file_path):
+    file_content = ''
+    with open(file_path, 'r') as f:
+      file_content = f.read()
+    response_body = file_content
+
+    if file_path.endswith('.css'):
+      content_type = 'text/css'
+    elif file_path.endswith('.js'):
+      content_type = 'text/javascript'
+
+    response_headers = [
+      ('Content-Type', content_type)
+    ]
+    
+    start_response('200 OK', response_headers)
+    return [response_body]
+
+  start_response('404 NOT FOUND', response_headers)
+  return [response_body]
+
+
+def mytextfile(environ, start_response):
+  response_body = ''
+  response_headers = [
+      ('Content-Type', 'plain/text')
+  ]
+  if os.path.exists('my_text_file.txt'):
+    with open('my_text_file.txt', 'r') as f:
+      response_body = f.read()
+    start_response('200 OK', response_headers)
+    return [response_body]
+  start_response('404 NOT FOUND', response_headers)
+  return [b'NOT FOUND']
 
 
 url_dispatches = [
-  (r'/comment', comment)
+  (r'/static/.*', app_static),
+  (r'^/$', index),
+  (r'/comment', comment),
+  (r'/my_text_file.txt', mytextfile)
 ]
 
 
@@ -84,5 +142,5 @@ if __name__ == '__main__':
     cursor.close()
     connector.close()
 
-    print 'db was created succesfully'
+    print 'appform.db was created succesfully'
 
