@@ -123,6 +123,9 @@ def get_cities(environ, start_response):
     cities_string += '<city>' + city[0] + '</city>'
   cities_string += '</cities>'
 
+  c.close()
+  conn.close()
+
   response_headers = [
     ('Content-Type', 'text/xml')
   ]
