@@ -6,6 +6,7 @@ from cgi import escape
 import re
 import os
 import sqlite3
+import urllib
 
 
 def index(environ, start_response):
@@ -85,31 +86,65 @@ def app_static(environ, start_response):
   return [response_body]
 
 
-def mytextfile(environ, start_response):
-  response_body = ''
+def get_regions(environ, start_response):
+  connector = sqlite3.connect('appform.db')
+  cursor = connector.cursor()
+
+  regions = cursor.execute('SELECT region FROM regions');
+
+  regions_string = '<regions>'
+  for region in regions:
+    regions_string += '<region>' + region[0] + '</region>'
+  regions_string += '</regions>'
+
+  cursor.close()
+  connector.close()
+
   response_headers = [
-      ('Content-Type', 'plain/text')
+    ('Content-Type', 'text/xml')
   ]
-  if os.path.exists('my_text_file.txt'):
-    with open('my_text_file.txt', 'r') as f:
-      response_body = f.read()
-    start_response('200 OK', response_headers)
-    return [response_body]
-  start_response('404 NOT FOUND', response_headers)
-  return [b'NOT FOUND']
+  start_response('200 OK', response_headers)
+  return [regions_string.encode()]
+
+
+def get_cities(environ, start_response):
+  query_string = urllib.unquote(environ['QUERY_STRING']);
+  matched = re.match(r'q=(.*)', query_string)
+  selected_region = (matched.group(1).decode(), )
+
+  conn = sqlite3.connect('appform.db')
+  c = conn.cursor()
+
+  cities = c.execute('SELECT city FROM cities WHERE regionid = (SELECT regionid FROM regions WHERE region = ?)', 
+    selected_region)
+
+  cities_string = '<cities>'
+  for city in cities:
+    cities_string += '<city>' + city[0] + '</city>'
+  cities_string += '</cities>'
+
+  response_headers = [
+    ('Content-Type', 'text/xml')
+  ]
+  start_response('200 OK', response_headers)
+  return [cities_string.encode()]
 
 
 url_dispatches = [
   (r'/static/.*', app_static),
   (r'^/$', index),
   (r'/comment', comment),
-  (r'/my_text_file.txt', mytextfile)
+  (r'/get_regions', get_regions),
+  (r'/get_cities', get_cities)
 ]
 
 
 def app(environ, start_response):
   response_body_iterable = ''
   path_info = environ['PATH_INFO']
+
+  print 'path_info=[' + path_info + ']'
+  print 'query_string=[' + environ['QUERY_STRING'] + ']'
 
   for url_dispatch in url_dispatches:
     pattern = url_dispatch[0]
