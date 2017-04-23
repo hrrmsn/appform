@@ -1,3 +1,4 @@
+// validate required inputs
 var validityMessages = {
   'first_name': 'First name should not be empty.',
   'last_name': 'Last name should not be empty.',
@@ -25,7 +26,7 @@ addEventListenerToInput(lastNameInput);
 addEventListenerToInput(commentTextArea);
 
 
-// playing with AJAX
+// load regions and corresponding cities by ajax
 var regionDatalist = document.getElementById('regions');
 
 window.addEventListener('load', function() {
@@ -53,7 +54,6 @@ regionInput.addEventListener('mousedown', function(e) {
 
 regionInput.addEventListener('change', function(e) {
   var selectedRegion = e.target.value;
-  console.log('selectedRegion=[' + selectedRegion + ']');
   if (selectedRegion == '') return;
 
   var xhttp = new XMLHttpRequest();

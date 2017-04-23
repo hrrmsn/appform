@@ -6,7 +6,7 @@
     <title>User application form</title>
   </head>
   <body>
-    <form id="form" action="" method="post">
+    <form id="form" action="/post" method="post">
       <div>
         <label for="first_name">First name<span style="color:red">*</span>:</label>
         <input type="text" id="first_name" name="firstName" required>
@@ -21,12 +21,12 @@
       </div>
       <div>
         <label for="reg">Region:</label>
-        <input list="regions" id="reg" name="region">
+        <input list="regions" id="reg" name="region" autocomplete="off">
         <datalist id="regions"></datalist>
       </div>
       <div>
         <label for="city_id">City:</label>
-        <input list="cities" id="city_id" name="city">
+        <input list="cities" id="city_id" name="city" autocomplete="off">
         <datalist id="cities"></datalist>
       </div>
       <div>

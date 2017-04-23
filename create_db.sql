@@ -1,17 +1,17 @@
 CREATE TABLE regions (
-  regionid  INTEGER PRIMARY KEY,
+  regionid  INTEGER PRIMARY KEY AUTOINCREMENT,
   region    VARCHAR
 );
 
 CREATE TABLE cities (
-  cityid    INTEGER PRIMARY KEY,
+  cityid    INTEGER PRIMARY KEY AUTOINCREMENT,
   city      VARCHAR,
   regionid  INTEGER,
   FOREIGN KEY(regionid) REFERENCES regions(regionid)
 );
 
 CREATE TABLE persons (
-  personid    INTEGER PRIMARY KEY,
+  personid    INTEGER PRIMARY KEY AUTOINCREMENT,
   firstname   VARCHAR,
   lastname    VARCHAR,
   middlename  VARCHAR,
@@ -24,18 +24,18 @@ CREATE TABLE persons (
   FOREIGN KEY(cityid)   REFERENCES cities(cityid)
 );
 
-INSERT INTO regions VALUES(0, 'Krasnodar Krai');
-INSERT INTO regions VALUES(1, 'Rostov Oblast');
-INSERT INTO regions VALUES(2, 'Stavropol Krai');
+INSERT INTO regions(region) VALUES('Krasnodar Krai');
+INSERT INTO regions(region) VALUES('Rostov Oblast');
+INSERT INTO regions(region) VALUES('Stavropol Krai');
 
-INSERT INTO cities VALUES(0, 'Krasnodar', 0);
-INSERT INTO cities VALUES(1, 'Kropotkin', 0);
-INSERT INTO cities VALUES(2, 'Slavyansk', 0);
+INSERT INTO cities(city, regionid) VALUES('Krasnodar', 1);
+INSERT INTO cities(city, regionid) VALUES('Kropotkin', 1);
+INSERT INTO cities(city, regionid) VALUES('Slavyansk', 1);
 
-INSERT INTO cities VALUES(3, 'Rostov', 1);
-INSERT INTO cities VALUES(4, 'Shakhty', 1);
-INSERT INTO cities VALUES(5, 'Bataysk', 1);
+INSERT INTO cities(city, regionid) VALUES('Rostov', 2);
+INSERT INTO cities(city, regionid) VALUES('Shakhty', 2);
+INSERT INTO cities(city, regionid) VALUES('Bataysk', 2);
 
-INSERT INTO cities VALUES(6, 'Stavropol', 2);
-INSERT INTO cities VALUES(7, 'Pyatigorsk', 2);
-INSERT INTO cities VALUES(8, 'Kislovodsk', 2);
+INSERT INTO cities(city, regionid) VALUES('Stavropol', 3);
+INSERT INTO cities(city, regionid) VALUES('Pyatigorsk', 3);
+INSERT INTO cities(city, regionid) VALUES('Kislovodsk', 3);
