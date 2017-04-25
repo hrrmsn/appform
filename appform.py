@@ -20,10 +20,9 @@ def index(environ, start_response):
 
 
 def comment(environ, start_response):
-  html = ''
+  response_body = 'Error when reading userform.html.'
   with open('userform.html', 'r') as f:
-    html = f.read()
-  response_body = html
+    response_body = f.read()
   start_response('200 OK', get_response_headers('text/html'))
   return [response_body.encode()]
 
@@ -51,24 +50,24 @@ def app_static(environ, start_response):
       content_type = 'text/javascript'
 
     start_response('200 OK', get_response_headers(content_type))
-    return [response_body]
+    return [response_body.encode()]
 
   return notfound(environ, start_response)
 
 
 def get_regions(environ, start_response):
-  connector = sqlite3.connect('appform.db')
-  cursor = connector.cursor()
+  conn = sqlite3.connect('appform.db')
+  cur = conn.cursor()
 
-  regions = cursor.execute('SELECT region FROM regions');
+  regions = cur.execute('SELECT region FROM regions');
 
   regions_string = '<regions>'
   for region in regions:
     regions_string += '<region>' + region[0] + '</region>'
   regions_string += '</regions>'
 
-  cursor.close()
-  connector.close()
+  cur.close()
+  conn.close()
 
   start_response('200 OK', get_response_headers('text/xml'))
   return [regions_string.encode()]
@@ -80,9 +79,9 @@ def get_cities(environ, start_response):
   selected_region = (matched.group(1).decode(), )
 
   conn = sqlite3.connect('appform.db')
-  c = conn.cursor()
+  cur = conn.cursor()
 
-  cities = c.execute('SELECT city FROM cities WHERE regionid = (SELECT regionid FROM regions WHERE region = ?)', 
+  cities = cur.execute('SELECT city FROM cities WHERE regionid = (SELECT regionid FROM regions WHERE region = ?)', 
     selected_region)
 
   cities_string = '<cities>'
@@ -90,7 +89,7 @@ def get_cities(environ, start_response):
     cities_string += '<city>' + city[0] + '</city>'
   cities_string += '</cities>'
 
-  c.close()
+  cur.close()
   conn.close()
 
   start_response('200 OK', get_response_headers('text/xml'))
@@ -117,58 +116,75 @@ url_dispatches = [
 check_db_existence = False
 
 def check_db():
-  if os.path.exists('appform.db'): return
+  if os.path.exists('appform.db'): 
+    return
 
   print 'creating sqlite db...'
 
-  sqlite_script = open('create_db.sql', 'r').read()
+  sqlite_script = ''
+  with open('create_db.sql', 'r') as f:
+    sqlite_script = f.read()
+
   conn = sqlite3.connect('appform.db')
-  c = conn.cursor()
+  cur = conn.cursor()
   
-  c.executescript(sqlite_script)
+  cur.executescript(sqlite_script)
   conn.commit()
 
-  c.close()
+  cur.close()
   conn.close()
 
   print 'appform.db was created succesfully'  
 
 
+def build_sql_insert(parsed_data):
+  sql_table = 'persons(firstname, lastname'
+  values = 'VALUES(?, ?'
+  userdata = (parsed_data['firstname'][0], parsed_data['lastname'][0], )
+
+  for parameter in ['middlename', 'regionid', 'cityid', 'phone', 'email', 'comment']:
+    if parsed_data[parameter][0]:
+      sql_table += ', ' + parameter
+      values += ', ?'
+      userdata += (parsed_data[parameter][0], )
+
+  sql_table += ')'
+  values += ')'  
+  sql_insert = 'INSERT INTO ' + sql_table + ' ' + values
+
+  return sql_insert, userdata
+
+
 def handle_post(environ):
   length = int(environ.get('CONTENT_LENGTH', '0'))
+  posted_data = ''
   if length != 0:
     posted_data = environ['wsgi.input'].read(length)
 
   parsed_data = parse_qs(posted_data, keep_blank_values=True)
 
   conn = sqlite3.connect('appform.db')
-  c = conn.cursor()
+  cur = conn.cursor()
 
-  regionids = c.execute('SELECT regionid FROM regions WHERE region = \'{}\''.format(parsed_data['region'].pop()))
+  regionids = cur.execute('SELECT regionid FROM regions WHERE region = \'{}\''.format(parsed_data['region'].pop()))
   regionid = ''
   for regid in regionids:
     regionid = regid[0]
 
-  cityids = c.execute('SELECT cityid FROM cities WHERE city = \'{}\''.format(parsed_data['city'].pop()))
+  cityids = cur.execute('SELECT cityid FROM cities WHERE city = \'{}\''.format(parsed_data['city'].pop()))
   cityid = ''
   for townid in cityids:
     cityid = townid[0]
 
-  c.execute("""INSERT INTO persons(firstname, lastname, middlename, regionid, cityid, phone, email, comment) 
-    VALUES(\'{firstName}\', \'{lastName}\', \'{middleName}\', {regionId}, {cityId}, \'{phone}\', \'{email}\', 
-    \'{comment}\')""".format(
-      firstName=parsed_data['firstName'].pop(), 
-      lastName=parsed_data['lastName'].pop(), 
-      middleName=parsed_data['middleName'].pop(),
-      regionId=regionid,
-      cityId=cityid,
-      phone=parsed_data['phone'].pop(),
-      email=parsed_data['email'].pop(),
-      comment=parsed_data['comment'].pop()))
+  parsed_data['regionid'] = [regionid]
+  parsed_data['cityid'] = [cityid]    
+  sql_insert, userdata = build_sql_insert(parsed_data)
+
+  cur.execute(sql_insert, userdata)
 
   conn.commit()
 
-  c.close()
+  cur.close()
   conn.close()
 
 
@@ -181,8 +197,6 @@ def app(environ, start_response):
 
   if environ['REQUEST_METHOD'].upper() == 'POST':
     handle_post(environ)
-
-  response_body_iterable = ''
 
   for url_dispatch in url_dispatches:
     pattern = url_dispatch[0]
