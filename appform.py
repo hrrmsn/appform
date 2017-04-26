@@ -7,6 +7,8 @@ import os
 import sqlite3
 import urllib
 
+SQLITE_DB_PATH = 'appform.db'
+
 
 def get_response_headers(content_type):
   return [('Content-Type', content_type)]
@@ -27,7 +29,7 @@ def comment(environ, start_response):
   return [response_body.encode()]
 
 
-def notfound(environ, start_response):
+def not_found(environ, start_response):
   response_body = """<!DOCTYPE html><html><body><p>Sorry, we have no idea what you're looking for.</p><p>Maybe you 
     would want to fill our awesome form. (Please follow <a href="/comment">this link</a>.)</p></body></html>"""
   start_response('404 NOT FOUND', get_response_headers('text/html'))
@@ -37,40 +39,62 @@ def notfound(environ, start_response):
 def app_static(environ, start_response):
   path_info = environ['PATH_INFO']
   file_path = path_info[1:]
+  if not os.path.exists(file_path):
+    return not_found(environ, start_response)
   
-  if os.path.exists(file_path):
-    file_content = ''
-    with open(file_path, 'r') as f:
-      file_content = f.read()
-    response_body = file_content
+  file_content = ''
+  with open(file_path, 'r') as f:
+    file_content = f.read()
+  response_body = file_content
 
-    if file_path.endswith('.css'):
-      content_type = 'text/css'
-    elif file_path.endswith('.js'):
-      content_type = 'text/javascript'
+  if file_path.endswith('.css'):
+    content_type = 'text/css'
+  elif file_path.endswith('.js'):
+    content_type = 'text/javascript'
 
-    start_response('200 OK', get_response_headers(content_type))
-    return [response_body.encode()]
-
-  return notfound(environ, start_response)
+  start_response('200 OK', get_response_headers(content_type))
+  return [response_body.encode()]
 
 
-def get_regions(environ, start_response):
-  conn = sqlite3.connect('appform.db')
+def db_request(sql_statements=[], sql_scripts=[], commit_required=False):
+  conn = sqlite3.connect(SQLITE_DB_PATH)
   cur = conn.cursor()
 
-  regions = cur.execute('SELECT region FROM regions');
+  db_responses = []
+  for sql_statement in sql_statements:
+    sql_instruction = sql_statement[0]
+    parameters = sql_statement[1] if len(sql_statement) > 1 else ()
 
-  regions_string = '<regions>'
-  for region in regions:
-    regions_string += '<region>' + region[0] + '</region>'
-  regions_string += '</regions>'
+    db_response = cur.execute(sql_instruction, parameters)
+    db_responses.append(db_response.fetchall())
+
+  for sql_script in sql_scripts:
+    cur.executescript(sql_script)
+
+  if commit_required:
+    conn.commit()
 
   cur.close()
   conn.close()
+  return db_responses
 
+
+def build_xml(main_tag, element_tag, list_of_tuples):
+  xml = '<' + main_tag + '>'
+  for tup in list_of_tuples:
+    xml += '<' + element_tag + '>' + tup[0] + '</' + element_tag + '>'
+  xml += '</' + main_tag + '>'
+  return xml
+
+
+def get_regions(environ, start_response):
+  db_responses = db_request(
+    sql_statements=[('SELECT region FROM regions', )]
+  )
+  regions = db_responses[0]
+  regions_xml = build_xml('regions', 'region', regions)
   start_response('200 OK', get_response_headers('text/xml'))
-  return [regions_string.encode()]
+  return [regions_xml.encode()]
 
 
 def get_cities(environ, start_response):
@@ -78,22 +102,14 @@ def get_cities(environ, start_response):
   matched = re.match(r'q=(.*)', query_string)
   selected_region = (matched.group(1).decode(), )
 
-  conn = sqlite3.connect('appform.db')
-  cur = conn.cursor()
-
-  cities = cur.execute('SELECT city FROM cities WHERE regionid = (SELECT regionid FROM regions WHERE region = ?)', 
-    selected_region)
-
-  cities_string = '<cities>'
-  for city in cities:
-    cities_string += '<city>' + city[0] + '</city>'
-  cities_string += '</cities>'
-
-  cur.close()
-  conn.close()
-
+  db_responses = db_request(
+    sql_statements=[("""SELECT city FROM cities WHERE regionid = (
+      SELECT regionid FROM regions WHERE region = ?)""", selected_region)]
+  )
+  cities = db_responses[0]
+  cities_xml = build_xml('cities', 'city', cities)
   start_response('200 OK', get_response_headers('text/xml'))
-  return [cities_string.encode()]
+  return [cities_xml.encode()]
 
 
 def post(environ, start_response):
@@ -125,14 +141,7 @@ def check_db():
   with open('create_db.sql', 'r') as f:
     sqlite_script = f.read()
 
-  conn = sqlite3.connect('appform.db')
-  cur = conn.cursor()
-  
-  cur.executescript(sqlite_script)
-  conn.commit()
-
-  cur.close()
-  conn.close()
+  db_request(sql_scripts=[sqlite_script], commit_required=True)
 
   print 'appform.db was created succesfully'  
 
@@ -151,41 +160,41 @@ def build_sql_insert(parsed_data):
   sql_table += ')'
   values += ')'  
   sql_insert = 'INSERT INTO ' + sql_table + ' ' + values
-
   return sql_insert, userdata
+
+
+# id_type can be 'region' or 'city'
+def get_areaid(id_type, parsed_data):
+  area = parsed_data[id_type].pop()
+  if not area:
+    return ''
+
+  sql_statement = 'SELECT cityid FROM cities WHERE city = \'{}\''.format(area)
+  if id_type == 'region':
+    sql_statement = 'SELECT regionid FROM regions WHERE region = \'{}\''.format(area)
+  db_responses = db_request(
+    sql_statements=[(sql_statement, )]
+  )
+  areaid_tuples_list = db_responses[0]
+  areaid_tuple = areaid_tuples_list[0] if len(areaid_tuples_list) > 0 else ('',)
+  return areaid_tuple[0]
 
 
 def handle_post(environ):
   length = int(environ.get('CONTENT_LENGTH', '0'))
-  posted_data = ''
-  if length != 0:
-    posted_data = environ['wsgi.input'].read(length)
-
+  posted_data = '' if length == 0 else environ['wsgi.input'].read(length)
   parsed_data = parse_qs(posted_data, keep_blank_values=True)
 
-  conn = sqlite3.connect('appform.db')
-  cur = conn.cursor()
-
-  regionids = cur.execute('SELECT regionid FROM regions WHERE region = \'{}\''.format(parsed_data['region'].pop()))
-  regionid = ''
-  for regid in regionids:
-    regionid = regid[0]
-
-  cityids = cur.execute('SELECT cityid FROM cities WHERE city = \'{}\''.format(parsed_data['city'].pop()))
-  cityid = ''
-  for townid in cityids:
-    cityid = townid[0]
-
+  regionid = get_areaid('region', parsed_data)
+  cityid = get_areaid('city', parsed_data)
   parsed_data['regionid'] = [regionid]
   parsed_data['cityid'] = [cityid]    
   sql_insert, userdata = build_sql_insert(parsed_data)
 
-  cur.execute(sql_insert, userdata)
-
-  conn.commit()
-
-  cur.close()
-  conn.close()
+  db_request(
+    sql_statements=[(sql_insert, userdata)],
+    commit_required=True
+  )
 
 
 def app(environ, start_response):
@@ -205,5 +214,5 @@ def app(environ, start_response):
     if re.match(pattern, environ['PATH_INFO']):
       return func(environ, start_response)
 
-  return notfound(environ, start_response)
+  return not_found(environ, start_response)
 
