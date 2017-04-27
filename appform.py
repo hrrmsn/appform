@@ -116,7 +116,58 @@ def post(environ, start_response):
   response_body = """<!DOCTYPE><html><body><p>Thank you for submitted form!</p><p>You can follow 
     <a href="/comment">this link</a> to fill yet another form.</body></html>"""
   start_response('200 OK', get_response_headers('text/html'))
-  return [response_body.encode()]  
+  return [response_body.encode()]
+
+
+def wrap_none(variable):
+  return variable if variable else ''
+
+
+def tuple_to_map(person_data):
+  person, index = {}, 0
+  for key in ['personid', 'firstname', 'lastname', 'middlename', 'regionid', 'cityid', 'phone', 'email', 'comment']:
+    person[key] = wrap_none(person_data[index])
+    index += 1
+  return person
+
+
+def view(environ, start_response):
+  db_responses = db_request(
+    sql_statements=[('SELECT * FROM persons', )]
+  )
+
+  persons_data = db_responses[0]
+  response_body = 'Error when reading from viewform.html.'
+  with open('viewform.html', 'r') as f:
+    response_body = f.read()
+  line_number = 1
+
+  for person_data in persons_data:
+    person = tuple_to_map(person_data)
+
+    db_responses = db_request(
+      sql_statements=[
+        ('SELECT region FROM regions WHERE regionid = ?', (person['regionid'],)),
+        ('SELECT city FROM cities WHERE cityid = ?', (person['cityid'],))
+      ]
+    )
+    region = get_single_value(db_responses[0]) if len(db_responses) > 0 else ''
+    city = get_single_value(db_responses[1]) if len(db_responses) > 1 else ''
+
+    person['region'] = region
+    person['city'] = city
+    person['line'] = str(line_number)
+    line_number += 1
+
+    response_body += '<tr>'
+    for column in ['line', 'firstname', 'lastname', 'middlename', 'region', 'city', 'phone', 'email', 'comment']:
+      response_body += '<td>' + person[column] + '</td>'
+    response_body += '</tr>'
+
+  response_body += '</table></body></html>'
+
+  start_response('200 OK', get_response_headers('text/html'))
+  return [response_body.encode()]
 
 
 url_dispatches = [
@@ -125,11 +176,12 @@ url_dispatches = [
   (r'/comment', comment),
   (r'/get_regions', get_regions),
   (r'/get_cities', get_cities),
-  (r'/post', post)
+  (r'/post', post),
+  (r'/view', view)
 ]
 
 
-check_db_existence = False
+checked_db_existence = False
 
 def check_db():
   if os.path.exists('appform.db'): 
@@ -163,21 +215,31 @@ def build_sql_insert(parsed_data):
   return sql_insert, userdata
 
 
-# id_type can be 'region' or 'city'
-def get_areaid(id_type, parsed_data):
-  area = parsed_data[id_type].pop()
-  if not area:
-    return ''
+def get_single_value(db_response):
+  tup = db_response[0] if len(db_response) > 0 else ('',)
+  first_element = tup[0]
+  return first_element
 
-  sql_statement = 'SELECT cityid FROM cities WHERE city = \'{}\''.format(area)
-  if id_type == 'region':
-    sql_statement = 'SELECT regionid FROM regions WHERE region = \'{}\''.format(area)
-  db_responses = db_request(
-    sql_statements=[(sql_statement, )]
-  )
-  areaid_tuples_list = db_responses[0]
-  areaid_tuple = areaid_tuples_list[0] if len(areaid_tuples_list) > 0 else ('',)
-  return areaid_tuple[0]
+
+def get_area_ids(parsed_data):
+  region = parsed_data['region'].pop()
+  city = parsed_data['city'].pop()
+
+  sql_commands = []
+  if region:
+    sql_commands.append(
+      ('SELECT regionid FROM regions WHERE region = ?', (region, ))
+    )
+  if city:
+    sql_commands.append(
+      ('SELECT cityid FROM cities WHERE city = ?', (city, ))
+    )
+
+  db_responses = db_request(sql_statements=sql_commands)
+
+  regionid = get_single_value(db_responses[0]) if len(db_responses) > 0 else ''
+  cityid = get_single_value(db_responses[1]) if len(db_responses) > 1 else ''
+  return regionid, cityid
 
 
 def handle_post(environ):
@@ -185,8 +247,7 @@ def handle_post(environ):
   posted_data = '' if length == 0 else environ['wsgi.input'].read(length)
   parsed_data = parse_qs(posted_data, keep_blank_values=True)
 
-  regionid = get_areaid('region', parsed_data)
-  cityid = get_areaid('city', parsed_data)
+  regionid, cityid = get_area_ids(parsed_data)
   parsed_data['regionid'] = [regionid]
   parsed_data['cityid'] = [cityid]    
   sql_insert, userdata = build_sql_insert(parsed_data)
@@ -198,11 +259,11 @@ def handle_post(environ):
 
 
 def app(environ, start_response):
-  global check_db_existence
+  global checked_db_existence
 
-  if not check_db_existence:
+  if not checked_db_existence:
     check_db()
-    check_db_existence = True
+    checked_db_existence = True
 
   if environ['REQUEST_METHOD'].upper() == 'POST':
     handle_post(environ)
