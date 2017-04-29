@@ -1,0 +1,53 @@
+.persons {
+  table-layout: fixed;
+  width: 100%;
+  white-space: nowrap;
+  font: 1em monospace;
+}
+
+.row-id {
+  width: 5%;
+}
+.row-firstname {
+  width: 10%;
+}
+.row-lastname {
+  width: 10%;
+}
+.row-middlename {
+  width: 10%;
+}
+.row-region {
+  width: 10%;
+}
+.row-city {
+  width: 10%;
+}
+.row-phone {
+  width: 12.5%;
+}
+.row-email {
+  width: 12.5%;
+}
+.row-comment {
+  width: 20%;
+}
+.persons td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.persons th {
+  background: darkblue;
+  color: white;
+}
+.persons td, 
+.persons th {
+  text-align: left;
+  padding: 5px 10px;
+}
+.persons tr:nth-child(even) {
+  background: lightblue;
+}
+
+

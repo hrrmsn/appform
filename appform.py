@@ -142,6 +142,8 @@ def view(environ, start_response):
     response_body = f.read()
   line_number = 1
 
+  response_body += '<tbody>'
+
   for person_data in persons_data:
     person = tuple_to_map(person_data)
 
@@ -164,7 +166,7 @@ def view(environ, start_response):
       response_body += '<td>' + person[column] + '</td>'
     response_body += '</tr>'
 
-  response_body += '</table></body></html>'
+  response_body += '</tbody></table></body></html>'
 
   start_response('200 OK', get_response_headers('text/html'))
   return [response_body.encode()]
