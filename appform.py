@@ -10,6 +10,13 @@ import urllib
 SQLITE_DB_PATH = 'appform.db'
 
 
+def readfile(filepath):
+  file_content = 'Error when reading from file: \'' + filepath + '\''
+  with open(filepath, 'r') as f:
+    file_content = f.read()
+  return file_content
+
+
 def get_response_headers(content_type):
   return [('Content-Type', content_type)]
 
@@ -22,16 +29,13 @@ def index(environ, start_response):
 
 
 def comment(environ, start_response):
-  response_body = 'Error when reading userform.html.'
-  with open('userform.html', 'r') as f:
-    response_body = f.read()
+  response_body = readfile('userform.html')
   start_response('200 OK', get_response_headers('text/html'))
   return [response_body.encode()]
 
 
 def not_found(environ, start_response):
-  response_body = """<!DOCTYPE html><html><body><p>Sorry, we have no idea what you're looking for.</p><p>Maybe you 
-    would want to fill our awesome form. (Please follow <a href="/comment">this link</a>.)</p></body></html>"""
+  response_body = readfile('not-found.html')
   start_response('404 NOT FOUND', get_response_headers('text/html'))
   return [response_body.encode()]
 
@@ -113,8 +117,7 @@ def get_cities(environ, start_response):
 
 
 def post(environ, start_response):
-  response_body = """<!DOCTYPE><html><body><p>Thank you for submitted form!</p><p>You can follow 
-    <a href="/comment">this link</a> to fill yet another form.</body></html>"""
+  response_body = readfile('post.html')
   start_response('200 OK', get_response_headers('text/html'))
   return [response_body.encode()]
 
@@ -137,12 +140,9 @@ def view(environ, start_response):
   )
 
   persons_data = db_responses[0]
-  response_body = 'Error when reading from viewform.html.'
-  with open('viewform.html', 'r') as f:
-    response_body = f.read()
-  line_number = 1
-
+  response_body = readfile('view.html')
   response_body += '<tbody>'
+  line_number = 1
 
   for person_data in persons_data:
     person = tuple_to_map(person_data)

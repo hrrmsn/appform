@@ -3,9 +3,7 @@ form {
   margin: 0 auto;
   width: 440px;
   /* To see the outline of the form */
-  padding: 5em;
-  /*border: 10px solid #b2aee5;*/
-  /*border-radius: 2em;*/
+  padding: 3em;
 }
 
 form div + div {
@@ -64,4 +62,8 @@ button {
   /* This extra margin represent roughly the same space as the space
      between the labels and their text fields */
   margin-left: .5em;
+}
+
+p {
+  margin: .5em auto;
 }
