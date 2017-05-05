@@ -164,12 +164,29 @@ def view(environ, start_response):
     response_body += '<tr>'
     for column in ['line', 'firstname', 'lastname', 'middlename', 'region', 'city', 'phone', 'email', 'comment']:
       response_body += '<td>' + person[column] + '</td>'
+    response_body += '<td><input type="checkbox" name="rowid-{}"></td>'.format(person['personid'])
     response_body += '</tr>'
 
-  response_body += '</tbody></table></body></html>'
+  response_body += '</tbody></table><script src="static/view.js"></script></body></html>'
 
   start_response('200 OK', get_response_headers('text/html'))
   return [response_body.encode()]
+
+
+def delete_comments(environ, start_response):
+  query_string = urllib.unquote(environ['QUERY_STRING'])
+  parsed_query = parse_qs(query_string)
+
+  sql_commands = []
+  for rowid in parsed_query['rowid']:
+    sql_query = 'UPDATE persons SET comment=\'\' WHERE personid=?'
+    sql_params = (rowid, )
+    sql_commands.append((sql_query, sql_params))
+
+  db_request(sql_statements=sql_commands, commit_required=True)
+
+  start_response('200 OK', get_response_headers('text/html'))
+  return [b'']
 
 
 url_dispatches = [
@@ -179,7 +196,8 @@ url_dispatches = [
   (r'/get_regions', get_regions),
   (r'/get_cities', get_cities),
   (r'/post', post),
-  (r'/view', view)
+  (r'/view', view),
+  (r'/delete_comments', delete_comments)
 ]
 
 

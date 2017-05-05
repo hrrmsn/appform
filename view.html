@@ -8,17 +8,34 @@
     <p>Go to the <a href="/comment">comment</a> page.</p>
     <p>Go to the <a href="/stat">stat</a> page. (Not implemented yet.)</p>
     <br>
-    <table class="persons">
+    <table class="buttons-table">
+      <tr>
+        <td><button id="select-all" type="button">select</button></td>
+        <td>You can select all comments.</td>
+      </tr>
+      <tr>
+        <td><button id="unselect-all" type="button">unselect</button></td>
+        <td>You can also unselect all comments.</td>
+      </tr>
+      <tr>
+        <td><button id="delete-comments" type="button">delete</button></td>
+        <td>Delete all selected comments.</td>
+      </tr>
+    </table>
+    <br>
+    <label></label>
+    <table class="persons" id="people">
       <thead>
         <tr>
-          <th class="row-1 row-id">#</th>
-          <th class="row-2 row-firstname">First name</th>
-          <th class="row-3 row-lastname">Last name</th>
-          <th class="row-4 row-middlename">Middle name</th>
-          <th class="row-5 row-region">Region</th>
-          <th class="row-6 row-city">City</th>
-          <th class="row-7 row-phone">Phone</th>
-          <th class="row-8 row-email">E-mail</th>
-          <th class="row-9 row-comment">Comment</th>
+          <th class="row-id">#</th>
+          <th class="row-firstname">First name</th>
+          <th class="row-lastname">Last name</th>
+          <th class="row-middlename">Middle name</th>
+          <th class="row-region">Region</th>
+          <th class="row-city">City</th>
+          <th class="row-phone">Phone</th>
+          <th class="row-email">E-mail</th>
+          <th class="row-comment">Comment</th>
+          <th class="row-delete">Delete comment</th>
         </tr>
       </thead>

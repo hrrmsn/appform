@@ -5,19 +5,19 @@
   word-wrap: break-word;
 }
 .row-id {
-  width: 5%;
+  width: 4%;
 }
 .row-firstname {
-  width: 10%;
+  width: 9%;
 }
 .row-lastname {
-  width: 10%;
+  width: 9%;
 }
 .row-middlename {
-  width: 10%;
+  width: 9%;
 }
 .row-region {
-  width: 10%;
+  width: 9%;
 }
 .row-city {
   width: 10%;
@@ -26,10 +26,13 @@
   width: 12%;
 }
 .row-email {
-  width: 13%;
+  width: 12%;
 }
 .row-comment {
-  width: 20%;
+  width: 19%;
+}
+.row-delete {
+  width: 7%;
 }
 .persons th {
   background: darkblue;
@@ -43,9 +46,33 @@
 .persons tr:nth-child(even) {
   background: lightblue;
 }
+.persons tr:hover:nth-child(odd) {
+  background: #f0eff9;
+}
+.persons tr:hover:nth-child(even) {
+  background: #9ad1e2;
+}
+.persons td:nth-child(10) {
+  text-align: center;
+}
 
 p {
   margin: .5em auto;
 }
+
+label {
+  font-style: italic;
+}
+
+.buttons-table {
+  border: 2px solid red;
+  border-spacing: 5px;
+}
+
+.buttons-table button {
+  width: 70px;
+}
+
+
 
 
