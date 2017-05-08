@@ -134,14 +134,8 @@ def tuple_to_map(person_data):
   return person
 
 
-def view(environ, start_response):
-  db_responses = db_request(
-    sql_statements=[('SELECT * FROM persons', )]
-  )
-
-  persons_data = db_responses[0]
-  response_body = readfile('view.html')
-  response_body += '<tbody>'
+def view_table_body(persons_data):
+  table_body = '<tbody>'
   line_number = 1
 
   for person_data in persons_data:
@@ -160,13 +154,29 @@ def view(environ, start_response):
     person['line'] = str(line_number)
     line_number += 1
 
-    response_body += '<tr>'
+    table_body += '<tr>'
     for column in ['line', 'firstname', 'lastname', 'middlename', 'region', 'city', 'phone', 'email', 'comment']:
-      response_body += '<td>' + person[column] + '</td>'
-    response_body += '<td><input type="checkbox" name="rowid-{}"></td>'.format(person['personid'])
-    response_body += '</tr>'
+      table_body += '<td>' + person[column] + '</td>'
+    table_body += '<td><input type="checkbox" name="rowid-{}"></td>'.format(person['personid'])
+    table_body += '</tr>'
 
-  response_body += '</tbody></table><script src="static/view.js"></script></body></html>'
+  table_body += '</tbody>'
+  return table_body 
+
+
+def view(environ, start_response):
+  db_responses = db_request(
+    sql_statements=[('SELECT * FROM persons', )]
+  )
+
+  persons_data = db_responses[0]
+  if not persons_data:
+    response_body = readfile('no-table-view.html')
+    start_response('200 OK', get_response_headers('text/html'))
+    return [response_body.encode()]
+
+  response_body = readfile('view.html')
+  response_body += view_table_body(persons_data) + '</table><script src="static/view.js"></script></body></html>'
 
   start_response('200 OK', get_response_headers('text/html'))
   return [response_body.encode()]
