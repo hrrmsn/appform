@@ -1,53 +1,24 @@
+// Variable declarations are here.
+var numberOfCommentsToDelete = 0;
+
 var checkboxes = document.querySelectorAll('input');
+var selectedCommentsLabel = document.querySelector('label');
 
-var checkedCounter = 0;
-var selectedRowsLabel = document.querySelector('label');
+var people = document.getElementById('people');
+var selectAllCommentsButton = document.getElementById('select-all');
+var unselectAllCommentsButton = document.getElementById('unselect-all');
+var deleteAllSelectedCommentsButton = document.getElementById('delete-comments');
 
-var len = checkboxes.length;
 
-function selectedRowsString(checked) {
-  if (checked === 0) {
+// Function declarations are here.
+function selectedCommentsString(selectedCommentsNumber) {
+  if (selectedCommentsNumber === 0) {
     return '';
-  } else if (checked === 1) {
+  } else if (selectedCommentsNumber === 1) {
     return '1 row is marked to delete';
   } 
-  return checked + ' rows are marked to delete';
+  return selectedCommentsNumber + ' rows are marked to delete';
 }
-
-for (var i = 0, len = checkboxes.length; i < len; i++) {
-  var checkbox = checkboxes[i];
-  checkbox.addEventListener('change', function(e) {
-    if (e.target.checked) { 
-      checkedCounter++;
-    } else {
-      checkedCounter--;
-    }
-    selectedRowsLabel.textContent = selectedRowsString(checkedCounter);
-  });
-}
-
-
-var selectAllCommentsButton = document.getElementById('select-all');
-selectAllCommentsButton.addEventListener('click', function(e) {
-  for (var i = 0, len = checkboxes.length; i < len; i++) {
-    var checkbox = checkboxes[i];
-    checkbox.checked = true;
-  }
-  checkedCounter = checkboxes.length;
-  selectedRowsLabel.textContent = selectedRowsString(checkedCounter);
-});
-
-
-var unselectAllCommentsButton = document.getElementById('unselect-all');
-unselectAllCommentsButton.addEventListener('click', function(e) {
-  for (var i = 0, len = checkboxes.length; i < len; i++) {
-    var checkbox = checkboxes[i];
-    checkbox.checked = false;
-  }
-  checkedCounter = 0;
-  selectedRowsLabel.textContent = '';
-});
-
 
 function extractRowid(rowid_string) {
   var re = /rowid-(\d+)/;
@@ -73,9 +44,6 @@ function getCommentIndexes(checkbox) {
   }
 }
 
-
-var people = document.getElementById('people');
-
 function sendAjaxRequest(rowids, commentIndexes) {
   var xhttp = new XMLHttpRequest();
   xhttp.onreadystatechange = function() {
@@ -91,17 +59,7 @@ function sendAjaxRequest(rowids, commentIndexes) {
   xhttp.send();
 }
 
-
-var deleteAllSelectedCommentsButton = document.getElementById('delete-comments');
-deleteAllSelectedCommentsButton.addEventListener('click', function(e) {
-  if (checkedCounter === 0) {
-    alert('Nothing is marked to delete. Please select comments that you would want to remove.');
-    return;
-  } else if (confirm('Are you sure that you want to delete selected comments?') === false) {
-    checkedCounter = 0;
-    selectedRowsLabel.textContent = '';
-    return;
-  }
+function extractRowidsAndIndexes(checkboxes) {
   var rowids = '';
   var commentIndexes = [];
   for (var i = 0, len = checkboxes.length; i < len; i++) {
@@ -109,19 +67,69 @@ deleteAllSelectedCommentsButton.addEventListener('click', function(e) {
     if (checkbox.checked === false) {
       continue;
     }
-    checkbox.checked = false;
-    var rowid = extractRowid(checkbox.name);
-    rowids += 'rowid=' + rowid;
+    rowids += 'rowid=' + extractRowid(checkbox.name);
     if (i < len - 1) {
       rowids += '&';
     }
     commentIndexes.push(getCommentIndexes(checkbox));
   }
+  return {
+    rowids: rowids,
+    commentIndexes: commentIndexes
+  }  
+}
 
-  sendAjaxRequest(rowids, commentIndexes);
+function selectAllComments() {
+  numberOfCommentsToDelete = checkboxes.length;
+  selectedCommentsLabel.textContent = selectedCommentsString(numberOfCommentsToDelete);
+  allCheckboxesToNewState('checked');
+}
 
+function unselectAllComments() {
+  numberOfCommentsToDelete = 0;
+  selectedCommentsLabel.textContent = '';
+  allCheckboxesToNewState('unchecked');
+}
+
+function allCheckboxesToNewState(newState) {
+  for (var i = 0, len = checkboxes.length; i < len; i++) {
+    var checkbox = checkboxes[i];
+    checkbox.checked = (newState === 'checked');
+  }
+}
+
+
+// Add event listeners here.
+for (var i = 0, len = checkboxes.length; i < len; i++) {
+  var checkbox = checkboxes[i];
+  checkbox.addEventListener('change', function(e) {
+    if (e.target.checked) { 
+      numberOfCommentsToDelete++;
+    } else {
+      numberOfCommentsToDelete--;
+    }
+    selectedCommentsLabel.textContent = selectedCommentsString(numberOfCommentsToDelete);
+  });
+}
+
+selectAllCommentsButton.addEventListener('click', function(e) {
+  selectAllComments();
+});
+
+unselectAllCommentsButton.addEventListener('click', function(e) {
+  unselectAllComments();
+});
+
+deleteAllSelectedCommentsButton.addEventListener('click', function(e) {
+  if (numberOfCommentsToDelete === 0) {
+    alert('Nothing is marked to delete. Please select comments that you would want to remove.');
+    return;
+  } else if (confirm('Are you sure that you want to delete selected comments?') === false) {
+    unselectAllComments();
+    return;
+  }
+  var rowidsAndIndexes = extractRowidsAndIndexes(checkboxes);
+  sendAjaxRequest(rowidsAndIndexes['rowids'], rowidsAndIndexes['commentIndexes']);
+  unselectAllComments();
   alert('Comments were deleted.');
-
-  checkedCounter = 0;
-  selectedRowsLabel.textContent = '';
 });
