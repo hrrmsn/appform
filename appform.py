@@ -149,15 +149,14 @@ def view(environ, start_response):
 
     db_responses = db_request(
       sql_statements=[
-        ('SELECT region FROM regions WHERE regionid = ?', (person['regionid'],)),
-        ('SELECT city FROM cities WHERE cityid = ?', (person['cityid'],))
+        ('SELECT region FROM regions WHERE regionid = ?', (person['regionid'], )),
+        ('SELECT city FROM cities WHERE cityid = ?', (person['cityid'], ))
       ]
     )
     region = get_single_value(db_responses[0]) if len(db_responses) > 0 else ''
     city = get_single_value(db_responses[1]) if len(db_responses) > 1 else ''
 
-    person['region'] = region
-    person['city'] = city
+    person['region'], person['city'] = region, city
     person['line'] = str(line_number)
     line_number += 1
 
@@ -236,7 +235,7 @@ def build_sql_insert(parsed_data):
 
 
 def get_single_value(db_response):
-  tup = db_response[0] if len(db_response) > 0 else ('',)
+  tup = db_response[0] if len(db_response) > 0 else ('', )
   first_element = tup[0]
   return first_element
 
@@ -296,4 +295,3 @@ def app(environ, start_response):
       return func(environ, start_response)
 
   return not_found(environ, start_response)
-
