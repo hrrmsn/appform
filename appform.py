@@ -35,7 +35,7 @@ def comment(environ, start_response):
 
 
 def not_found(environ, start_response):
-  response_body = readfile('not-found.html')
+  response_body = readfile('static/html/not-found.html')
   start_response('404 NOT FOUND', get_response_headers('text/html'))
   return [response_body.encode()]
 
@@ -117,7 +117,7 @@ def get_cities(environ, start_response):
 
 
 def post(environ, start_response):
-  response_body = readfile('post.html')
+  response_body = readfile('static/html/post.html')
   start_response('200 OK', get_response_headers('text/html'))
   return [response_body.encode()]
 
@@ -134,7 +134,7 @@ def tuple_to_map(person_data):
   return person
 
 
-def view_table_body(persons_data):
+def users_table_body(persons_data):
   table_body = '<tbody>'
   line_number = 1
 
@@ -171,12 +171,16 @@ def view(environ, start_response):
 
   persons_data = db_responses[0]
   if not persons_data:
-    response_body = readfile('no-table-view.html')
+    response_body = readfile('static/html/no-table-view.html')
     start_response('200 OK', get_response_headers('text/html'))
     return [response_body.encode()]
 
-  response_body = readfile('view.html')
-  response_body += view_table_body(persons_data) + '</table><script src="static/view.js"></script></body></html>'
+  response_body = readfile('static/html/view.html')
+  html_data = {
+    'tbody': users_table_body(persons_data), 
+    'script': '<script src="static/js/view.js"></script>'
+  }
+  response_body = response_body.format(**html_data)
 
   start_response('200 OK', get_response_headers('text/html'))
   return [response_body.encode()]
@@ -198,6 +202,11 @@ def delete_comments(environ, start_response):
   return [b'']
 
 
+def stat(environ, start_response):
+  start_response('200 OK', get_response_headers('text/html'))
+  return [b'<!DOCTYPE html><html><body>Hello!</body></html>']
+
+
 url_dispatches = [
   (r'/static/.*', app_static),
   (r'^/$', index),
@@ -206,7 +215,8 @@ url_dispatches = [
   (r'/get_cities', get_cities),
   (r'/post', post),
   (r'/view', view),
-  (r'/delete_comments', delete_comments)
+  (r'/delete_comments', delete_comments),
+  (r'/stat', stat)
 ]
 
 
