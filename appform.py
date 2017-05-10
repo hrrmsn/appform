@@ -8,11 +8,13 @@ import sqlite3
 import urllib
 
 SQLITE_DB_PATH = 'appform.db'
+MIN_COMMENTS_NUMBER_BY_REGION = 5
 
 
-def readfile(filepath):
+def readfile(filepath, binary=False):
   file_content = 'Error when reading from file: \'' + filepath + '\''
-  with open(filepath, 'r') as f:
+  mode = 'rb' if binary else 'r'
+  with open(filepath, mode) as f:
     file_content = f.read()
   return file_content
 
@@ -46,18 +48,22 @@ def app_static(environ, start_response):
   if not os.path.exists(file_path):
     return not_found(environ, start_response)
   
-  file_content = ''
-  with open(file_path, 'r') as f:
-    file_content = f.read()
-  response_body = file_content
+  response_body = readfile(file_path, binary=True)
 
   if file_path.endswith('.css'):
     content_type = 'text/css'
   elif file_path.endswith('.js'):
     content_type = 'text/javascript'
+  elif file_path.endswith('.html'):
+    content_type = 'text/html'
+  elif file_path.endswith('.jpg'):
+    content_type = 'image/jpeg'
+  
+  if content_type != 'image/jpeg':
+    response_body = response_body.encode()
 
   start_response('200 OK', get_response_headers(content_type))
-  return [response_body.encode()]
+  return [response_body]
 
 
 def db_request(sql_statements=[], sql_scripts=[], commit_required=False):
@@ -202,9 +208,76 @@ def delete_comments(environ, start_response):
   return [b'']
 
 
-def stat(environ, start_response):
+def regions_table(db_response):
+  stat_table = '<br><table class="regions">'
+  stat_table += '<thead>'
+  stat_table += '<tr>'
+  stat_table += '<th class="row-id">#</th>'
+  stat_table += '<th class="row-region">Region</th>'
+  stat_table += '<th class="row-comments-number">Comments number</th>'
+  stat_table += '</tr>'
+  stat_table += '</thead>'
+  stat_table += '<tbody>'
+
+  line_number = 0
+  for region_info in db_response:
+    line_number += 1
+    region = region_info[0]
+    comments_number = region_info[1]
+    stat_table += '<tr>'
+    stat_table += '<td>' + str(line_number) + '</td>'
+    stat_table += '<td><a href="stat?region={}">'.format(region) + region + '</a></td>'
+    stat_table += '<td>' + str(comments_number) + '</td>'
+    stat_table += '</tr>'
+  stat_table += '</tbody></table>'
+  return stat_table  
+
+
+def stat_all_regions(environ, start_response):
+  sql_command = """SELECT (SELECT region FROM regions WHERE regions.regionid = persons.regionid) as RegionName, 
+    count(comment) as CommentsNumber FROM persons GROUP BY RegionName HAVING CommentsNumber > ?"""
+
+  db_responses = db_request(
+    sql_statements=[
+      (sql_command, (MIN_COMMENTS_NUMBER_BY_REGION, ))
+    ]
+  )
+
+  db_response = db_responses[0]
+  response_body = readfile('static/html/stat.html')
+  if not db_response:
+    instead_of_table = """<p>There are no regions with amount of comments larger than {}</p>""".format(
+      str(MIN_COMMENTS_NUMBER_BY_REGION))
+    response_body = response_body.format(**{'table': instead_of_table})
+
+    start_response('200 OK', get_response_headers('text/html'))
+    return [response_body.encode()]
+
+  response_body = response_body.format(**{'table': regions_table(db_response)})
+
   start_response('200 OK', get_response_headers('text/html'))
-  return [b'<!DOCTYPE html><html><body>Hello!</body></html>']
+  return [response_body.encode()]
+
+
+def stat_one_region(environ, start_response):
+  query_string = urllib.unquote(environ['QUERY_STRING'])
+  parsed_query = parse_qs(query_string)
+
+  region = parsed_query['region'].pop()
+
+  db_responses = db_request(
+    sql_statements=[("""SELECT """)]
+  )
+
+  start_response('200 OK', get_response_headers('text/html'))
+  return [b'<!DOCTYPE html><html><body>Hello my dear friend!</body></html>']
+
+
+
+def stat(environ, start_response):
+  if environ['QUERY_STRING']:
+    return stat_one_region(environ, start_response)
+  return stat_all_regions(environ, start_response)
 
 
 url_dispatches = [
@@ -216,7 +289,7 @@ url_dispatches = [
   (r'/post', post),
   (r'/view', view),
   (r'/delete_comments', delete_comments),
-  (r'/stat', stat)
+  (r'/stat', stat),
 ]
 
 

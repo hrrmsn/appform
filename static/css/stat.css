@@ -1,3 +1,40 @@
+.regions {
+  table-layout: fixed;
+  width: 60%;
+  font: 1em monospace;
+  word-wrap: break-word;
+}
+.row-id {
+  width: 10%;
+}
+.row-region {
+  width: 70%;
+}
+.row-comments-number {
+  width: 20%;
+}
+.regions th {
+  background: darkblue;
+  color: white;
+}
+.regions td, 
+.regions th {
+  text-align: left;
+  padding: 5px 10px;
+}
+.regions tr:nth-child(even) {
+  background: lightblue;
+}
+.regions tr:hover:nth-child(odd) {
+  background: #f0eff9;
+}
+.regions tr:hover:nth-child(even) {
+  background: #9ad1e2;
+}
+.regions td:nth-child(10) {
+  text-align: center;
+}
+
 p {
   margin: .5em auto;
 }
