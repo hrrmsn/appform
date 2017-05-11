@@ -44,14 +44,18 @@ function getCommentIndexes(checkbox) {
   }
 }
 
-function sendAjaxRequest(rowids, commentIndexes) {
+function sendAjaxRequest(rowids, checkboxesToDisable) {
   var xhttp = new XMLHttpRequest();
   xhttp.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
-      for (var i = 0, len = commentIndexes.length; i < len; i++) {
-        var row = commentIndexes[i]['row'];
-        var column = commentIndexes[i]['column'];
-        people.rows[row].cells[column].innerHTML = '';
+      for (var i = 0, len = checkboxesToDisable.length; i < len; i++) {
+        var checkboxToDisable = checkboxesToDisable[i];
+        checkboxToDisable.disabled = true;
+
+        var commentIndexes = getCommentIndexes(checkboxToDisable);
+        var row = commentIndexes['row'];
+        var column = commentIndexes['column'];
+        people.rows[row].cells[column].innerHTML = '<i>N/A</i>';
       }
     }
   };
@@ -59,9 +63,9 @@ function sendAjaxRequest(rowids, commentIndexes) {
   xhttp.send();
 }
 
-function extractRowidsAndIndexes(checkboxes) {
+function extractRowidsAndCheckboxesToDisable(checkboxes) {
   var rowids = '';
-  var commentIndexes = [];
+  var checkboxesToDisable = [];
   for (var i = 0, len = checkboxes.length; i < len; i++) {
     var checkbox = checkboxes[i];
     if (checkbox.checked === false) {
@@ -71,18 +75,18 @@ function extractRowidsAndIndexes(checkboxes) {
     if (i < len - 1) {
       rowids += '&';
     }
-    commentIndexes.push(getCommentIndexes(checkbox));
+    checkboxesToDisable.push(checkbox);
   }
   return {
     rowids: rowids,
-    commentIndexes: commentIndexes
+    checkboxesToDisable: checkboxesToDisable
   }  
 }
 
 function selectAllComments() {
   numberOfCommentsToDelete = checkboxes.length;
-  selectedCommentsLabel.textContent = selectedCommentsString(numberOfCommentsToDelete);
-  allCheckboxesToNewState('checked');
+  var selectedCheckboxesNumber = allCheckboxesToNewState('checked');
+  selectedCommentsLabel.textContent = selectedCommentsString(selectedCheckboxesNumber);
 }
 
 function unselectAllComments() {
@@ -92,10 +96,16 @@ function unselectAllComments() {
 }
 
 function allCheckboxesToNewState(newState) {
+  var enabledCheckboxesNumber = 0;
   for (var i = 0, len = checkboxes.length; i < len; i++) {
     var checkbox = checkboxes[i];
+    if (checkbox.disabled) {
+      continue;
+    }
+    enabledCheckboxesNumber++;
     checkbox.checked = (newState === 'checked');
   }
+  return enabledCheckboxesNumber;
 }
 
 
@@ -128,8 +138,8 @@ deleteAllSelectedCommentsButton.addEventListener('click', function(e) {
     unselectAllComments();
     return;
   }
-  var rowidsAndIndexes = extractRowidsAndIndexes(checkboxes);
-  sendAjaxRequest(rowidsAndIndexes['rowids'], rowidsAndIndexes['commentIndexes']);
+  var extracted = extractRowidsAndCheckboxesToDisable(checkboxes);
+  sendAjaxRequest(extracted['rowids'], extracted['checkboxesToDisable']);
   unselectAllComments();
   alert('Comments were deleted.');
 });

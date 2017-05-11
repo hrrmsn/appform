@@ -164,9 +164,13 @@ def users_table_body(persons_data):
     for column in ['line', 'firstname', 'lastname', 'middlename', 'region', 'city', 'phone', 'email']:
       table_body += '<td>{}</td>'.format(person[column])
 
-    table_body += '<td>{}</td>'.format(person['comment']) if person['comment'] else '<td><i>N/A</i></td>'
+    if person['comment']:
+      table_body += '<td>{}</td>'.format(person['comment'])
+      table_body += '<td><input type="checkbox" name="rowid-{}"></td>'.format(person['personid'])
+    else:
+      table_body += '<td><i>N/A</i></td>'
+      table_body += '<td><input type="checkbox" name="rowid-{}" disabled></td>'.format(person['personid'])
 
-    table_body += '<td><input type="checkbox" name="rowid-{}"></td>'.format(person['personid'])
     table_body += '</tr>'
 
   table_body += '</tbody>'
