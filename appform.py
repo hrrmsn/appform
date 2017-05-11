@@ -161,8 +161,11 @@ def users_table_body(persons_data):
     line_number += 1
 
     table_body += '<tr>'
-    for column in ['line', 'firstname', 'lastname', 'middlename', 'region', 'city', 'phone', 'email', 'comment']:
-      table_body += '<td>' + person[column] + '</td>'
+    for column in ['line', 'firstname', 'lastname', 'middlename', 'region', 'city', 'phone', 'email']:
+      table_body += '<td>{}</td>'.format(person[column])
+
+    table_body += '<td>{}</td>'.format(person['comment']) if person['comment'] else '<td><i>N/A</i></td>'
+
     table_body += '<td><input type="checkbox" name="rowid-{}"></td>'.format(person['personid'])
     table_body += '</tr>'
 
@@ -210,6 +213,11 @@ def delete_comments(environ, start_response):
 
 def regions_table(db_response):
   stat_table = '<br><table class="regions">'
+
+  stat_table += '<caption>'
+  stat_table += 'Regions with amount of comments more than {}'.format(MIN_COMMENTS_NUMBER_BY_REGION)
+  stat_table += '</caption>'
+
   stat_table += '<thead>'
   stat_table += '<tr>'
   stat_table += '<th class="row-id">#</th>'
@@ -235,7 +243,7 @@ def regions_table(db_response):
 
 def stat_all_regions(environ, start_response):
   sql_command = """SELECT (SELECT region FROM regions WHERE regions.regionid = persons.regionid) as RegionName, 
-    count(comment) as CommentsNumber FROM persons GROUP BY RegionName HAVING CommentsNumber > ?"""
+    count(comment) as CommentsNumber FROM persons WHERE comment != '' GROUP BY RegionName HAVING CommentsNumber > ?"""
 
   db_responses = db_request(
     sql_statements=[
@@ -246,7 +254,7 @@ def stat_all_regions(environ, start_response):
   db_response = db_responses[0]
   response_body = readfile('static/html/stat.html')
   if not db_response:
-    instead_of_table = """<p>There are no regions with amount of comments larger than {}</p>""".format(
+    instead_of_table = """<br><p>Sorry, there are no regions with amount of comments more than {}.</p>""".format(
       str(MIN_COMMENTS_NUMBER_BY_REGION))
     response_body = response_body.format(**{'table': instead_of_table})
 
