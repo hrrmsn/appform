@@ -84,9 +84,8 @@ function extractRowidsAndCheckboxesToDisable(checkboxes) {
 }
 
 function selectAllComments() {
-  numberOfCommentsToDelete = checkboxes.length;
-  var selectedCheckboxesNumber = allCheckboxesToNewState('checked');
-  selectedCommentsLabel.textContent = selectedCommentsString(selectedCheckboxesNumber);
+  numberOfCommentsToDelete = allCheckboxesToNewState('checked');
+  selectedCommentsLabel.textContent = selectedCommentsString(numberOfCommentsToDelete);
 }
 
 function unselectAllComments() {
