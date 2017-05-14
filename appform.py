@@ -253,7 +253,7 @@ def regions_table(db_response):
 
 def stat_all_regions(environ, start_response):
   sql_command = """
-    SELECT   (SELECT region 
+      SELECT (SELECT region 
                 FROM regions 
                WHERE regions.regionid = persons.regionid) AS region_name, 
              count(comment) AS comments_number 
@@ -381,10 +381,7 @@ def check_db():
 
   print 'creating sqlite db...'
 
-  sqlite_script = ''
-  with open('create_db.sql', 'r') as f:
-    sqlite_script = f.read()
-
+  sqlite_script = readfile('create_db.sql')
   db_request(sql_scripts=[sqlite_script], commit_required=True)
 
   print 'appform.db was created succesfully'  
