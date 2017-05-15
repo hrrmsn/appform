@@ -29,7 +29,7 @@ def index(environ, start_response):
 
 
 def comment(environ, start_response):
-  response_body = readfile('userform.html')
+  response_body = readfile('static/html/userform.html')
   start_response('200 OK', get_response_headers('text/html'))
   return [response_body.encode()]
 
@@ -40,7 +40,7 @@ def not_found(environ, start_response):
   return [response_body.encode()]
 
 
-def app_static(environ, start_response):
+def static(environ, start_response):
   path_info = environ['PATH_INFO']
   file_path = path_info[1:]
   if not os.path.exists(file_path):
@@ -103,7 +103,7 @@ def get_regions(environ, start_response):
   regions = db_responses[0]
   regions_xml = build_xml('regions', 'region', regions)
   start_response('200 OK', get_response_headers('text/xml'))
-  return [regions_xml.encode()]
+  return [regions_xml.encode('utf-8')]
 
 
 def get_cities(environ, start_response):
@@ -126,12 +126,6 @@ def get_cities(environ, start_response):
   cities_xml = build_xml('cities', 'city', cities)
   start_response('200 OK', get_response_headers('text/xml'))
   return [cities_xml.encode()]
-
-
-def post(environ, start_response):
-  response_body = readfile('static/html/post.html')
-  start_response('200 OK', get_response_headers('text/html'))
-  return [response_body.encode()]
 
 
 def wrap_none(variable):
@@ -190,7 +184,7 @@ def view(environ, start_response):
 
   persons_data = db_responses[0]
   if not persons_data:
-    response_body = readfile('static/html/no-table-view.html')
+    response_body = readfile('static/html/no-data-view.html')
     start_response('200 OK', get_response_headers('text/html'))
     return [response_body.encode()]
 
@@ -269,7 +263,7 @@ def stat_all_regions(environ, start_response):
   )
 
   db_response = db_responses[0]
-  response_body = readfile('static/html/stat.html')
+  response_body = readfile('static/html/stat-all-regions.html')
   if not db_response:
     instead_of_table = """<br><p>Sorry, there are no regions with amount of comments more than {}.</p>""".format(
       str(MIN_COMMENTS_NUMBER_BY_REGION))
@@ -337,7 +331,7 @@ def stat_one_region(environ, start_response):
   )
   db_response = db_responses[0]
 
-  response_body = readfile('static/html/stat-cities.html')
+  response_body = readfile('static/html/stat-one-region.html')
   if not db_response:
     title = 'No comments are found'
     table = '<br><p>Sorry, there are no comments for the cities of the specified region.</p>'
@@ -361,15 +355,14 @@ def stat(environ, start_response):
 
 
 url_dispatches = [
-  (r'/static/.*', app_static),
-  (r'^/$', index),
-  (r'/comment', comment),
-  (r'/get_regions', get_regions),
-  (r'/get_cities', get_cities),
-  (r'/post', post),
-  (r'/view', view),
-  (r'/delete_comments', delete_comments),
-  (r'/stat', stat)
+  (r'/static/.*', static),
+  (r'/$', index),
+  (r'/comment$', comment),
+  (r'/get_regions$', get_regions),
+  (r'/get_cities$', get_cities),
+  (r'/view$', view),
+  (r'/delete_comments$', delete_comments),
+  (r'/stat$', stat)
 ]
 
 
@@ -381,7 +374,7 @@ def check_db():
 
   print 'creating sqlite db...'
 
-  sqlite_script = readfile('create_db.sql')
+  sqlite_script = readfile('static/sqlite/create.sql')
   db_request(sql_scripts=[sqlite_script], commit_required=True)
 
   print 'appform.db was created succesfully'  
