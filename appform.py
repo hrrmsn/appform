@@ -366,9 +366,9 @@ url_dispatches = [
 ]
 
 
-checked_db_existence = False
+db_exists = False
 
-def check_db():
+def create_db():
   if os.path.exists('appform.db'): 
     return
 
@@ -441,11 +441,11 @@ def handle_post(environ):
 
 
 def app(environ, start_response):
-  global checked_db_existence
+  global db_exists
 
-  if not checked_db_existence:
-    check_db()
-    checked_db_existence = True
+  if not db_exists:
+    create_db()
+    db_exists = True
 
   if environ['REQUEST_METHOD'].upper() == 'POST':
     handle_post(environ)

@@ -18,7 +18,7 @@ label {
   font: .9em monospace;
 }
 
-input, textarea {
+input, textarea, select {
   /* To make sure that all text fields have the same font settings
      By default, textareas have a monospace font */
   font: .9em serif;
