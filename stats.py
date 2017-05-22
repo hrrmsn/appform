@@ -13,33 +13,33 @@ MIN_COMMENTS_NUMBER_BY_REGION = 5
 # Helper functions are here.
 
 def regions_table(db_response):
-  stat_table = '<br><table class="regions">'
+  stats_table = '<br><table class="regions">'
 
-  stat_table += '<caption>'
-  stat_table += 'Regions with amount of comments more than {}'.format(MIN_COMMENTS_NUMBER_BY_REGION)
-  stat_table += '</caption>'
+  stats_table += '<caption>'
+  stats_table += 'Regions with amount of comments more than {}'.format(MIN_COMMENTS_NUMBER_BY_REGION)
+  stats_table += '</caption>'
 
-  stat_table += '<thead>'
-  stat_table += '<tr>'
-  stat_table += '<th class="row-id">#</th>'
-  stat_table += '<th class="row-region">Region</th>'
-  stat_table += '<th class="row-comments-number">Comments number</th>'
-  stat_table += '</tr>'
-  stat_table += '</thead>'
-  stat_table += '<tbody>'
+  stats_table += '<thead>'
+  stats_table += '<tr>'
+  stats_table += '<th class="row-id">#</th>'
+  stats_table += '<th class="row-region">Region</th>'
+  stats_table += '<th class="row-comments-number">Comments number</th>'
+  stats_table += '</tr>'
+  stats_table += '</thead>'
+  stats_table += '<tbody>'
 
   line_number = 0
   for region_info in db_response:
     line_number += 1
     region = region_info[0]
     comments_number = region_info[1]
-    stat_table += '<tr>'
-    stat_table += '<td>' + str(line_number) + '</td>'
-    stat_table += '<td><a href="stat?region={}">'.format(region) + region + '</a></td>'
-    stat_table += '<td>' + str(comments_number) + '</td>'
-    stat_table += '</tr>'
-  stat_table += '</tbody></table>'
-  return stat_table  
+    stats_table += '<tr>'
+    stats_table += '<td>' + str(line_number) + '</td>'
+    stats_table += '<td><a href="stat?region={}">'.format(region) + region + '</a></td>'
+    stats_table += '<td>' + str(comments_number) + '</td>'
+    stats_table += '</tr>'
+  stats_table += '</tbody></table>'
+  return stats_table
 
 
 def stats_all_regions(environ, start_response):
