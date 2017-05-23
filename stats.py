@@ -3,43 +3,43 @@
 import urllib
 import urlparse
 
-from tools import get_response_headers
-from tools import db_request
-from tools import readfile
+import tools
 
 MIN_COMMENTS_NUMBER_BY_REGION = 5
 
 
 # Helper functions are here.
 
-def regions_table(db_response):
-  stats_table = '<br><table class="regions">'
+def areas_table(db_response, region=''):
+  area_table = '<br><table class="areas">'
 
-  stats_table += '<caption>'
-  stats_table += 'Regions with amount of comments more than {}'.format(MIN_COMMENTS_NUMBER_BY_REGION)
-  stats_table += '</caption>'
+  area_table += '<caption>'
+  if region:
+    area_table += 'Comments by cities of {}'.format(region)
+  else:
+    area_table += 'Regions with amount of comments more than {}'.format(MIN_COMMENTS_NUMBER_BY_REGION)
+  area_table += '</caption>'
 
-  stats_table += '<thead>'
-  stats_table += '<tr>'
-  stats_table += '<th class="row-id">#</th>'
-  stats_table += '<th class="row-region">Region</th>'
-  stats_table += '<th class="row-comments-number">Comments number</th>'
-  stats_table += '</tr>'
-  stats_table += '</thead>'
-  stats_table += '<tbody>'
+  area_table += '<thead><tr>'
+  area_table += '<th class="row-id">#</th>'
+  area_table += '<th class="row-area">{}</th>'.format('City' if region else 'Region')
+  area_table += '<th class="row-comments-number">Comments number</th>'
+  area_table += '</tr></thead>'
 
+  area_table += '<tbody>'
   line_number = 0
-  for region_info in db_response:
+  for area_info in db_response:
+    area, comments_number = area_info[0], area_info[1]
     line_number += 1
-    region = region_info[0]
-    comments_number = region_info[1]
-    stats_table += '<tr>'
-    stats_table += '<td>' + str(line_number) + '</td>'
-    stats_table += '<td><a href="stat?region={}">'.format(region) + region + '</a></td>'
-    stats_table += '<td>' + str(comments_number) + '</td>'
-    stats_table += '</tr>'
-  stats_table += '</tbody></table>'
-  return stats_table
+
+    area_table += '<tr>'
+    area_table += '<td>{}</td>'.format(line_number)
+    area_table += '<td>{}</td>'.format(area if region else '<a href="stat?region={}">{}</a>'.format(area, area))
+    area_table += '<td>{}</td>'.format(comments_number)
+    area_table += '</tr>'
+
+  area_table += '</tbody></table>'
+  return area_table
 
 
 def stats_all_regions(environ, start_response):
@@ -53,62 +53,33 @@ def stats_all_regions(environ, start_response):
     GROUP BY region_name 
       HAVING comments_number > ?"""
 
-  db_responses = db_request(
+  db_responses = tools.db_request(
     sql_statements=[
       (sql_command, (MIN_COMMENTS_NUMBER_BY_REGION, ))
     ]
   )
 
   db_response = db_responses[0]
-  response_body = readfile('static/html/stat-all-regions.html')
+  response_body = tools.readfile('static/html/stats-all-regions.html')
   if not db_response:
     instead_of_table = """<br><p>Sorry, there are no regions with amount of comments more than {}.</p>""".format(
       str(MIN_COMMENTS_NUMBER_BY_REGION))
     response_body = response_body.format(**{'table': instead_of_table})
 
-    start_response('200 OK', get_response_headers('text/html'))
-    return [response_body.encode()]
+    start_response(tools.OK_200_STATUS, tools.get_response_headers(tools.TEXT_HTML))
+    return [response_body.encode(UTF8)]
 
-  response_body = response_body.format(**{'table': regions_table(db_response)})
+  response_body = response_body.format(**{'table': areas_table(db_response)})
 
-  start_response('200 OK', get_response_headers('text/html'))
-  return [response_body.encode()]
-
-
-def cities_table(db_response, region):
-  cities_table = '<br><table class="cities">'
-  cities_table += '<caption>'
-  cities_table += 'Comments by cities of ' + region
-  cities_table += '</caption>'
-  cities_table += '<thead>'
-  cities_table += '<tr>'
-  cities_table += '<th class="row-id">#</th>'
-  cities_table += '<th class="row-city">City</th>'
-  cities_table += '<th class="row-comments-number">Comments number</th>'
-  cities_table += '</tr>'
-  cities_table += '<tbody>'
-
-  line_number = 0
-  for city_info in db_response:
-    city = city_info[0]
-    comments_number = city_info[1]
-    line_number += 1
-
-    cities_table += '<tr>'
-    cities_table += '<td>' + str(line_number) + '</td>'
-    cities_table += '<td>' + city + '</td>'
-    cities_table += '<td>' + str(comments_number) + '</td>'
-    cities_table += '</tr>'
-
-  cities_table += '</tbody></table>' 
-  return cities_table
+  start_response(tools.OK_200_STATUS, tools.get_response_headers(tools.TEXT_HTML))
+  return [response_body.encode(tools.UTF8)]
 
 
 def stats_one_region(environ, start_response):
   query_string = urllib.unquote(environ['QUERY_STRING'])
   parsed_query = urlparse.parse_qs(query_string)
 
-  region = parsed_query['region'].pop()
+  region_name = parsed_query['region'].pop()
 
   sql_command = """
       SELECT (SELECT city 
@@ -122,27 +93,27 @@ def stats_one_region(environ, start_response):
                WHERE regions.region = ?)
          AND persons.comment != ''
     GROUP BY city"""
-  params = (region, )
-  db_responses = db_request(
+  params = (region_name, )
+  db_responses = tools.db_request(
     sql_statements=[(sql_command, params)]
   )
   db_response = db_responses[0]
 
-  response_body = readfile('static/html/stat-one-region.html')
+  response_body = tools.readfile('static/html/stats-one-region.html')
   if not db_response:
     title = 'No comments are found'
     table = '<br><p>Sorry, there are no comments for the cities of the specified region.</p>'
     response_body = response_body.format(**{'title': title, 'table': table})
 
-    start_response('200 OK', get_response_headers('text/html'))
-    return [response_body.encode()]
+    start_response(tools.OK_200_STATUS, tools.get_response_headers(tools.TEXT_HTML))
+    return [response_body.encode(tools.UTF8)]
 
   response_body = response_body.format(
-    **{'title': 'Cities of ' + region, 'table': cities_table(db_response, region)}
+    **{'title': 'Cities of ' + region_name, 'table': areas_table(db_response, region=region_name)}
   )
 
-  start_response('200 OK', get_response_headers('text/html'))
-  return [response_body.encode()]
+  start_response(tools.OK_200_STATUS, tools.get_response_headers(tools.TEXT_HTML))
+  return [response_body.encode(tools.UTF8)]
 
 
 # URL-dispatching functions are here.

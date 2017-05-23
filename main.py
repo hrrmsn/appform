@@ -2,36 +2,34 @@
 
 import re
 import os
+import urllib
+import urlparse
 
-from tools import get_response_headers
-from tools import readfile
-from tools import db_request
-
-from view import view
-from post import handle_post
-from stats import stats
-from get_areas import get_regions
-from get_areas import get_cities
+import tools
+import view
+import post
+import stats
+import get_areas
 
 
 # URL-dispatching functions are here.
 
 def index(environ, start_response):
-  response_body = readfile('static/html/index.html')
-  start_response('200 OK', get_response_headers('text/html'))
-  return [response_body.encode()]
+  response_body = tools.readfile('static/html/index.html')
+  start_response(tools.OK_200_STATUS, tools.get_response_headers(tools.TEXT_HTML))
+  return [response_body.encode(tools.UTF8)]
 
 
 def comment(environ, start_response):
-  response_body = readfile('static/html/userform.html')
-  start_response('200 OK', get_response_headers('text/html'))
-  return [response_body.encode()]
+  response_body = tools.readfile('static/html/userform.html')
+  start_response(tools.OK_200_STATUS, tools.get_response_headers(tools.TEXT_HTML))
+  return [response_body.encode(tools.UTF8)]
 
 
 def not_found(environ, start_response):
-  response_body = readfile('static/html/not-found.html')
-  start_response('404 NOT FOUND', get_response_headers('text/html'))
-  return [response_body.encode()]
+  response_body = tools.readfile('static/html/not-found.html')
+  start_response('404 NOT FOUND', tools.get_response_headers(tools.TEXT_HTML))
+  return [response_body.encode(tools.UTF8)]
 
 
 def static(environ, start_response):
@@ -51,20 +49,17 @@ def static(environ, start_response):
   elif file_path.endswith('.ico'):
     content_type = 'image/x-icon'
 
-  response_body = readfile(file_path)
+  response_body = tools.readfile(file_path)
   if not content_type in ['image/jpeg', 'image/x-icon']:
-    response_body = response_body.encode()
+    response_body = response_body.encode(tools.UTF8)
 
-  start_response('200 OK', get_response_headers(content_type))
+  start_response(tools.OK_200_STATUS, tools.get_response_headers(content_type))
   return [response_body]
 
 
 def delete_comments(environ, start_response):
-  from urllib import unquote
-  from urlparse import parse_qs
-
-  query_string = unquote(environ['QUERY_STRING'])
-  parsed_query = parse_qs(query_string)
+  query_string = urllib.unquote(environ['QUERY_STRING'])
+  parsed_query = urlparse.parse_qs(query_string)
 
   sql_commands = []
   for rowid in parsed_query['rowid']:
@@ -72,9 +67,9 @@ def delete_comments(environ, start_response):
     sql_params = (rowid, )
     sql_commands.append((sql_query, sql_params))
 
-  db_request(sql_statements=sql_commands, commit_required=True)
+  tools.db_request(sql_statements=sql_commands, commit_required=True)
 
-  start_response('200 OK', get_response_headers('text/html'))
+  start_response(tools.OK_200_STATUS, tools.get_response_headers(tools.TEXT_HTML))
   return [b'']
 
 
@@ -82,11 +77,11 @@ url_dispatches = [
   (r'/static/.*', static),
   (r'/$', index),
   (r'/comment$', comment),
-  (r'/get_regions$', get_regions),
-  (r'/get_cities$', get_cities),
-  (r'/view$', view),
+  (r'/get_regions$', get_areas.get_regions),
+  (r'/get_cities$', get_areas.get_cities),
+  (r'/view$', view.view),
   (r'/delete_comments$', delete_comments),
-  (r'/stat$', stats)
+  (r'/stat$', stats.stats)
 ]
 
 
@@ -98,8 +93,8 @@ def create_db():
 
   print 'creating sqlite db...'
 
-  sqlite_script = readfile('static/sqlite/create.sql')
-  db_request(sql_scripts=[sqlite_script], commit_required=True)
+  sqlite_script = tools.readfile('static/sqlite/create.sql')
+  tools.db_request(sql_scripts=[sqlite_script], commit_required=True)
 
   print 'appform.db was created succesfully'  
 
@@ -114,7 +109,7 @@ def app(environ, start_response):
     db_exists = True
 
   if environ['REQUEST_METHOD'].upper() == 'POST':
-    handle_post(environ)
+    post.handle_post(environ)
 
   for url_dispatch in url_dispatches:
     pattern = url_dispatch[0]

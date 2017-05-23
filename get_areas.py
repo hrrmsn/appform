@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
-import urllib
 import re
+import urllib
 
-from tools import get_response_headers
-from tools import db_request
+import tools
+
+TEXT_XML = 'text/xml'
 
 
 # Helper functions are here.
@@ -20,13 +21,13 @@ def build_xml(main_tag, element_tag, list_of_tuples):
 # URL-dispatching functions are here.
 
 def get_regions(environ, start_response):
-  db_responses = db_request(
+  db_responses = tools.db_request(
     sql_statements=[("""SELECT region FROM regions""", )]
   )
   regions = db_responses[0]
   regions_xml = build_xml('regions', 'region', regions)
-  start_response('200 OK', get_response_headers('text/xml'))
-  return [regions_xml.encode('utf-8')]
+  start_response(tools.OK_200_STATUS, tools.get_response_headers(TEXT_XML))
+  return [regions_xml.encode(tools.UTF8)]
 
 
 def get_cities(environ, start_response):
@@ -42,10 +43,10 @@ def get_cities(environ, start_response):
               FROM regions 
              WHERE region = ?)"""
 
-  db_responses = db_request(
+  db_responses = tools.db_request(
     sql_statements=[(sql_command, selected_region)]
   )
   cities = db_responses[0]
   cities_xml = build_xml('cities', 'city', cities)
-  start_response('200 OK', get_response_headers('text/xml'))
-  return [cities_xml.encode()]
+  start_response(tools.OK_200_STATUS, tools.get_response_headers(TEXT_XML))
+  return [cities_xml.encode(tools.UTF8)]

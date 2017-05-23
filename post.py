@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-from tools import db_request
-from tools import get_single_value
+import urlparse
+import tools
 
 
 #  Helper functions are here.
@@ -22,6 +22,7 @@ def build_sql_insert(parsed_data):
   sql_insert = 'INSERT INTO ' + sql_table + ' ' + values
   return sql_insert, userdata
 
+
 def get_area_ids(parsed_data):
   region = parsed_data['region'].pop()
   city = parsed_data['city'].pop()
@@ -36,10 +37,10 @@ def get_area_ids(parsed_data):
       ("""SELECT cityid FROM cities WHERE city = ?""", (city, ))
     )
 
-  db_responses = db_request(sql_statements=sql_commands)
+  db_responses = tools.db_request(sql_statements=sql_commands)
 
-  regionid = get_single_value(db_responses[0]) if len(db_responses) > 0 else ''
-  cityid = get_single_value(db_responses[1]) if len(db_responses) > 1 else ''
+  regionid = tools.get_single_value(db_responses[0]) if len(db_responses) > 0 else ''
+  cityid = tools.get_single_value(db_responses[1]) if len(db_responses) > 1 else ''
   return regionid, cityid
 
 
@@ -48,14 +49,14 @@ def get_area_ids(parsed_data):
 def handle_post(environ):
   length = int(environ.get('CONTENT_LENGTH', '0'))
   posted_data = '' if length == 0 else environ['wsgi.input'].read(length)
-  parsed_data = parse_qs(posted_data, keep_blank_values=True)
+  parsed_data = urlparse.parse_qs(posted_data, keep_blank_values=True)
 
   regionid, cityid = get_area_ids(parsed_data)
   parsed_data['regionid'] = [regionid]
   parsed_data['cityid'] = [cityid]    
   sql_insert, userdata = build_sql_insert(parsed_data)
 
-  db_request(
+  tools.db_request(
     sql_statements=[(sql_insert, userdata)],
     commit_required=True
   )

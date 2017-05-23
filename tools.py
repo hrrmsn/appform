@@ -2,7 +2,11 @@
 
 import sqlite3
 
+UTF8 = 'utf-8'
+TEXT_HTML = 'text/html'
+OK_200_STATUS = '200 OK'
 SQLITE_DB_PATH = 'appform.db'
+
 
 # Helpful functions are here.
 

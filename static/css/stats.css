@@ -1,4 +1,4 @@
-.cities {
+.areas {
   table-layout: fixed;
   width: 60%;
   font: 1em monospace;
@@ -7,31 +7,31 @@
 .row-id {
   width: 10%;
 }
-.row-city {
+.row-area {
   width: 70%;
 }
 .row-comments-number {
   width: 20%;
 }
-.cities th {
+.areas th {
   background: darkblue;
   color: white;
 }
-.cities td, 
-.cities th {
+.areas td, 
+.areas th {
   text-align: left;
   padding: 5px 10px;
 }
-.cities tr:nth-child(even) {
+.areas tr:nth-child(even) {
   background: lightblue;
 }
-.cities tr:hover:nth-child(odd) {
+.areas tr:hover:nth-child(odd) {
   background: #f0eff9;
 }
-.cities tr:hover:nth-child(even) {
+.areas tr:hover:nth-child(even) {
   background: #9ad1e2;
 }
-.cities td:nth-child(10) {
+.areas td:nth-child(10) {
   text-align: center;
 }
 
