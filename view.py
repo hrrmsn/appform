@@ -38,10 +38,9 @@ def users_table_body(persons_data):
     line_number += 1
 
     table_body += '<tr>'
-    for column in ['line', 'firstname', 'lastname', 'middlename', 'region', 'city', 'phone', 'email']:
-      table_body += '<td>{}</td>'.format(person[column])
+    for column in ['line', 'firstname', 'lastname', 'middlename', 'region', 'city', 'phone', 'email', 'comment']:
+      table_body += '<td>{}</td>'.format(person[column] if person[column] else '<i>N/A</i>')
 
-    table_body += '<td>{}</td>'.format(person['comment'] if person['comment'] else '<i>N/A</i>')
     if person['comment']:
       table_body += '<td><input type="checkbox" name="rowid-{}"></td>'.format(person['personid'])
     else:
@@ -50,7 +49,7 @@ def users_table_body(persons_data):
     table_body += '</tr>'
 
   table_body += '</tbody>'
-  return table_body 
+  return table_body
 
 
 # URL-dispatching function.

@@ -30,6 +30,8 @@ def areas_table(db_response, region=''):
   line_number = 0
   for area_info in db_response:
     area, comments_number = area_info[0], area_info[1]
+    if not area:
+      area = '<i>N/A</i>'
     line_number += 1
 
     area_table += '<tr>'
@@ -40,6 +42,25 @@ def areas_table(db_response, region=''):
 
   area_table += '</tbody></table>'
   return area_table
+
+
+def fill_html_template(html_code, stats_mode, region='', db_response=False):
+  title = 'Cities of {}'.format(region)
+  stat_page = 'Go to the <a href="/stat">stat</a> page.'
+
+  if stats_mode == 'all':
+    title = 'Comments number by regions'
+    stat_page = 'Go to the <a href="static/html/outer-space.html">outer space</a>.'
+
+  table = '<br><p><i>Sorry, there are no comments for the cities of the specified region.</i></p>'
+  if db_response:
+    table = areas_table(db_response, region=region if stats_mode == 'one' else '')
+  elif not db_response and stats_mode == 'all':
+    table = """<br><p><i>Sorry, there are no regions with amount of comments more than {}.</i></p>""".format(
+      str(MIN_COMMENTS_NUMBER_BY_REGION))
+
+  html_filled = html_code.format(**{'title': title, 'stat-page': stat_page, 'table': table})
+  return html_filled
 
 
 def stats_all_regions(environ, start_response):
@@ -60,16 +81,13 @@ def stats_all_regions(environ, start_response):
   )
 
   db_response = db_responses[0]
-  response_body = tools.readfile('static/html/stats-all-regions.html')
+  response_body = tools.readfile('static/html/stats.html')
   if not db_response:
-    instead_of_table = """<br><p>Sorry, there are no regions with amount of comments more than {}.</p>""".format(
-      str(MIN_COMMENTS_NUMBER_BY_REGION))
-    response_body = response_body.format(**{'table': instead_of_table})
-
+    response_body = fill_html_template(response_body, stats_mode='all')
     start_response(tools.OK_200_STATUS, tools.get_response_headers(tools.TEXT_HTML))
-    return [response_body.encode(UTF8)]
+    return [response_body.encode(tools.UTF8)]
 
-  response_body = response_body.format(**{'table': areas_table(db_response)})
+  response_body = fill_html_template(response_body, stats_mode='all', db_response=db_response)
 
   start_response(tools.OK_200_STATUS, tools.get_response_headers(tools.TEXT_HTML))
   return [response_body.encode(tools.UTF8)]
@@ -79,7 +97,7 @@ def stats_one_region(environ, start_response):
   query_string = urllib.unquote(environ['QUERY_STRING'])
   parsed_query = urlparse.parse_qs(query_string)
 
-  region_name = parsed_query['region'].pop()
+  region = parsed_query['region'].pop()
 
   sql_command = """
       SELECT (SELECT city 
@@ -93,24 +111,19 @@ def stats_one_region(environ, start_response):
                WHERE regions.region = ?)
          AND persons.comment != ''
     GROUP BY city"""
-  params = (region_name, )
+  params = (region, )
   db_responses = tools.db_request(
     sql_statements=[(sql_command, params)]
   )
   db_response = db_responses[0]
 
-  response_body = tools.readfile('static/html/stats-one-region.html')
+  response_body = tools.readfile('static/html/stats.html')
   if not db_response:
-    title = 'No comments are found'
-    table = '<br><p>Sorry, there are no comments for the cities of the specified region.</p>'
-    response_body = response_body.format(**{'title': title, 'table': table})
-
+    response_body = fill_html_template(response_body, stats_mode='one', region=region)
     start_response(tools.OK_200_STATUS, tools.get_response_headers(tools.TEXT_HTML))
     return [response_body.encode(tools.UTF8)]
 
-  response_body = response_body.format(
-    **{'title': 'Cities of ' + region_name, 'table': areas_table(db_response, region=region_name)}
-  )
+  response_body = fill_html_template(response_body, stats_mode='one', region=region, db_response=db_response)
 
   start_response(tools.OK_200_STATUS, tools.get_response_headers(tools.TEXT_HTML))
   return [response_body.encode(tools.UTF8)]

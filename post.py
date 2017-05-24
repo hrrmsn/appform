@@ -24,8 +24,8 @@ def build_sql_insert(parsed_data):
 
 
 def get_area_ids(parsed_data):
-  region = parsed_data['region'].pop()
-  city = parsed_data['city'].pop()
+  region = parsed_data['region'].pop() if 'region' in parsed_data else ''
+  city = parsed_data['city'].pop() if 'city' in parsed_data else ''
 
   sql_commands = []
   if region:
@@ -53,7 +53,8 @@ def handle_post(environ):
 
   regionid, cityid = get_area_ids(parsed_data)
   parsed_data['regionid'] = [regionid]
-  parsed_data['cityid'] = [cityid]    
+  parsed_data['cityid'] = [cityid]
+
   sql_insert, userdata = build_sql_insert(parsed_data)
 
   tools.db_request(
